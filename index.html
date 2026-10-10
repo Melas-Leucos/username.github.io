@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fff5f8">
+<title>もぐとも｜食事記録</title>
+<style>
+:root{--pink:#f5c6d9;--pink2:#fff0f5;--mint:#cceee3;--lav:#e9e1fa;--ink:#554b59;--white:#fffdfd}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#fff5f8,#f3f8ff 65%,#f2fff9);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;font-size:15px}button,input,select,textarea{font:inherit}button{border:0;border-radius:14px;padding:10px 14px;background:var(--pink2);color:var(--ink);cursor:pointer;font-weight:650}button.primary{background:#e9b3cb}button.danger{background:#ffe4e5}header{padding:22px 18px 14px;text-align:center}header h1{margin:0;font-size:29px;letter-spacing:.08em}header p{margin:5px 0;color:#897e91;font-size:13px}.wrap{max-width:650px;margin:auto;padding:0 13px 35px}.card{background:#ffffffdf;border:1px solid #fff;border-radius:22px;padding:17px;margin:12px 0;box-shadow:0 5px 22px #bba8bd15}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.between{justify-content:space-between}.date{width:100%;padding:10px;border:1px solid #eadce8;border-radius:12px;background:white;color:var(--ink)}h2{font-size:17px;margin:0 0 13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--pink2);padding:12px 7px;border-radius:15px;text-align:center}.stat:nth-child(2){background:#eef9f5}.stat:nth-child(3){background:#f3efff}.stat strong{display:block;font-size:22px}.stat small{font-size:11px;color:#85798a}.field{display:block;width:100%;padding:11px;margin:7px 0 12px;border:1px solid #e8dce8;border-radius:12px;background:#fff;color:var(--ink)}label{font-size:12px;color:#817386}.meal{border:1px solid #f0e7ef;padding:12px;border-radius:15px;margin:9px 0;background:#fff}.meal-title{font-weight:700}.muted{color:#94889a;font-size:12px}.meal-actions{display:flex;gap:7px;margin-top:9px}.meal-actions button{font-size:12px;padding:7px 10px}.bubble{padding:11px 13px;border-radius:15px;margin:8px 0;line-height:1.65}.rua{background:#fff0f5;margin-right:22px}.kanade{background:#eef9f5;margin-left:22px}.chatname{font-weight:750;font-size:12px}.empty{text-align:center;padding:20px;color:#9a8c9c}.foot{text-align:center;font-size:11px;color:#998e9f;padding:12px}#notice{font-size:12px;color:#648879;min-height:18px}@media(min-width:520px){.wrap{padding-left:20px;padding-right:20px}.card{padding:20px}}
+</style>
+</head>
+<body>
+<header><h1>🍓 もぐとも</h1><p>食べたものを、少しずつ記録しよう。</p></header>
+<main class="wrap">
+<section class="card"><h2>📅 今日の記録</h2><input class="date" type="date" id="date"><p id="dateLabel" class="muted"></p><div class="stats"><div class="stat"><strong id="count">0</strong><small>食事の記録</small></div><div class="stat"><strong id="kcal">—</strong><small>合計 kcal</small></div><div class="stat"><strong id="water">0</strong><small>記録した食事</small></div></div></section>
+<section class="card"><h2 id="formTitle">🍰 食事を記録する</h2><form id="mealForm"><label for="mealTime">食事の時間帯</label><select class="field" id="mealTime"><option>朝ごはん</option><option>昼ごはん</option><option>夜ごはん</option><option>おやつ・飲み物</option></select><label for="food">食べたもの（必須）</label><input class="field" id="food" required maxlength="100" placeholder="例：おにぎり、うどん、ビール"><label for="amount">量・メモ（任意）</label><input class="field" id="amount" maxlength="120" placeholder="例：1人前、半分食べた"><label for="calories">カロリー（任意）</label><input class="field" id="calories" type="number" min="0" max="10000" placeholder="わからなければ空欄でOK"><div class="row"><button class="primary" type="submit" id="saveBtn">記録する ♡</button><button type="button" id="cancelBtn" hidden>編集をやめる</button></div></form><p id="notice" role="status"></p></section>
+<section class="card"><div class="row between"><h2>🧁 食べたもの</h2><span class="muted" id="mealDate"></span></div><div id="mealList"></div></section>
+<section class="card"><h2>💌 るあちゃんと奏くん</h2><div id="chat"><div class="bubble rua"><div class="chatname">🎀 るあちゃん</div>べ、別に食事を記録してほしいわけじゃないけど……。食べたならちゃんと残しなさいよね！</div><div class="bubble kanade"><div class="chatname">🍀 奏くん</div>こんにちは！ 食べられたことも立派な一歩だよ。無理せず、自分のペースで記録していこうね。</div></div><div class="row"><button id="ruaBtn">るあちゃんと話す</button><button id="kanadeBtn">奏くんと話す</button></div><p class="muted">※今は定型文チャットです。AIとの自由な会話には接続していません。</p></section>
+<div class="foot">もぐとも ♡ 記録はこのブラウザ内に保存されます。<br>この試作版では端末間の同期はありません。</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const KEY="mogutomo_meals_v1";
+let meals=[];let editing=null;
+try{meals=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(meals))meals=[]}catch(e){meals=[]}
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+$("date").value=today();
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(meals));$("notice").textContent="保存したよ ♡"}catch(e){$("notice").textContent="保存できませんでした。ブラウザの設定を確認してね。"}}
+function render(){const day=$("date").value;const list=meals.filter(m=>m.date===day).sort((a,b)=>a.created-b.created);$("dateLabel").textContent=day+" の記録";$("mealDate").textContent=day;$("count").textContent=list.length;const known=list.filter(m=>m.calories!==null);$("kcal").textContent=known.length?known.reduce((s,m)=>s+m.calories,0).toLocaleString():"—";$("water").textContent=list.length;$("mealList").replaceChildren();if(!list.length){const p=document.createElement("div");p.className="empty";p.textContent="まだ記録がないよ。最初のひとくちを記録してみよう 🍓";$("mealList").append(p);return}for(const m of list){const box=document.createElement("div");box.className="meal";const title=document.createElement("div");title.className="meal-title";title.textContent=m.time+" · "+m.food;box.append(title);if(m.amount){const p=document.createElement("div");p.className="muted";p.textContent=m.amount;box.append(p)}if(m.calories!==null){const p=document.createElement("div");p.className="muted";p.textContent=m.calories+" kcal";box.append(p)}const actions=document.createElement("div");actions.className="meal-actions";const edit=document.createElement("button");edit.textContent="編集";edit.onclick=()=>startEdit(m.id);const del=document.createElement("button");del.textContent="削除";del.className="danger";del.onclick=()=>removeMeal(m.id);actions.append(edit,del);box.append(actions);$("mealList").append(box)}}
+$("mealForm").addEventListener("submit",e=>{e.preventDefault();const food=$("food").value.trim();if(!food)return;const raw=$("calories").value;const item={id:editing||String(Date.now())+Math.random().toString(16).slice(2),date:$("date").value,time:$("mealTime").value,food,amount:$("amount").value.trim(),calories:raw===""?null:Number(raw),created:Date.now()};if(editing){meals=meals.map(m=>m.id===editing?item:m)}else meals.push(item);persist();resetForm();render();chatLine("save")});
+function startEdit(id){const m=meals.find(x=>x.id===id);if(!m)return;editing=id;$("mealTime").value=m.time;$("food").value=m.food;$("amount").value=m.amount;$("calories").value=m.calories??"";$("formTitle").textContent="✏️ 食事を編集する";$("saveBtn").textContent="変更を保存";$("cancelBtn").hidden=false;window.scrollTo({top:0,behavior:"smooth"})}
+function resetForm(){$("mealForm").reset();editing=null;$("formTitle").textContent="🍰 食事を記録する";$("saveBtn").textContent="記録する ♡";$("cancelBtn").hidden=true}
+function removeMeal(id){if(!confirm("この食事の記録を削除する？"))return;meals=meals.filter(m=>m.id!==id);persist();if(editing===id)resetForm();render()}
+$("cancelBtn").onclick=resetForm;$("date").addEventListener("change",()=>{resetForm();render()});
+const rua=["べ、別に褒めてないけど……記録できたのはえらいじゃない。","ちゃんと食べた？ 無理な我慢はダメだからね！","記録は完璧じゃなくていいの。続けられるペースにしなさいよね。","お腹がすいたなら食べなさいよ。自分を大事にすること！"];
+const kanade=["記録してくれてありがとう！ 今日の自分を振り返るきっかけになるね。","食べられたことを大切にしよう。量もペースも人それぞれだよ。","入力おつかれさま！ 水分補給も忘れずにね。","うまく記録できない日があっても大丈夫。また気が向いたときに書こう！"];
+function chatLine(type){const box=document.createElement("div");box.className="bubble "+(type==="rua"?"rua":"kanade");const name=document.createElement("div");name.className="chatname";name.textContent=type==="rua"?"🎀 るあちゃん":"🍀 奏くん";const msg=document.createElement("div");const arr=type==="rua"?rua:kanade;msg.textContent=arr[Math.floor(Math.random()*arr.length)];box.append(name,msg);$("chat").append(box);box.scrollIntoView({behavior:"smooth",block:"nearest"})}
+$("ruaBtn").onclick=()=>chatLine("rua");$("kanadeBtn").onclick=()=>chatLine("kanade");render();
+</script>
+</body>
+</html>
